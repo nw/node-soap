@@ -109,6 +109,83 @@ terminated.
 
 An instance of Client is passed to the soap.createClient callback.  It is used to execute methods on the soap service.
 
+For more control use the Client directly.
+
+### Options
+
+  - security: A security interface instance (see below)
+  - request: Properties you want to pass to 'request' directly (object)
+  - soapHeaders: Additional soapHeader (array) // recommended you use client.addSoapHeader
+  - soapAction: A function to invoke
+  - headers: An object to attach additional headers to the request
+  - endpoint: url
+  - ready: A fn to call when Client is ready // mainly used for compat
+
+### Instance
+
+``` javascript
+
+    var client = new Soap.Client(endpoint, {
+      security: new Soap.Security.basic('user', pass)
+    , request: {
+        rejectUnauthorized: false
+      , secureOptions: constants.SSL_OP_NO_TLSv1_2 }
+    });
+
+    client.once('load', function(client){
+        console.log(client.describe());
+    });
+
+    client.on('error', function(err){
+      console.log(err);
+    });
+    
+```
+
+or you can defer loading until your ready by not passing a WSDL instance or a string (url) as the first parameter.
+Passing nothing, options or callback as first parameter will invoke this behavior.
+
+``` javascript
+
+    var client = new Soap.Client(function(client){
+      console.log(client.describe());
+    });
+    
+    client.on('error', function(err){
+      // handle error
+    });
+
+    client.addSecurity(new Soap.Security.basic(user, pass));
+    client.setEndpoint(endpoint);
+    
+    Soap.WSDL.fetch(url, options, function(err, wsdl){
+      if(err) return client.emit('error', err);
+      assert.ok(Soap.WSDL.cache[url] === wsdl); // fetch uses wsdl caching
+      client.load(wsdl);
+    });
+    
+```
+
+If you do not pass in a callback function or set `options.ready` then you must register your own event listner.
+
+``` javascript
+
+    var client = new Soap.Client({
+      security: new Soap.Security.clientSSL(key, cert)
+      request: {strictSSL: true}
+    });
+
+    client.once('load', function(client){
+      // start using the service
+    });
+
+    client.load(url);
+
+```
+
+Client no longer throws unless you do not listen for 'error'.
+
+
 ### Client.describe() - description of services, ports and methods as a JavaScript object
 
 ``` javascript
@@ -132,14 +209,14 @@ An instance of Client is passed to the soap.createClient callback.  It is used t
   client.setSecurity(new WSSecurity('username', 'password'))
 ```
 
-### Client.*method*(args, callback) - call *method* on the SOAP service.
+### Client.*method*(payload, options, callback) - call *method* on the SOAP service.
 
 ``` javascript
   client.MyFunction({name: 'value'}, function(err, result) {
       // result is a javascript object
   })
 ```
-### Client.*service*.*port*.*method*(args, callback) - call a *method* using a specific *service* and *port*
+### Client.*service*.*port*.*method*(payload,  options, callback) - call a *method* using a specific *service* and *port*
 
 ``` javascript
   client.MyService.MyPort.MyFunction({name: 'value'}, function(err, result) {
@@ -157,6 +234,16 @@ An instance of Client is passed to the soap.createClient callback.  It is used t
  - `xmlns`          URI
 
 ### Client.*lastRequest* - the property that contains last full soap request for client logging
+
+## WSDL
+
+### WSDL.*cache*  - object of cached wsdl objects
+
+### WSDL.*load*(url, options, callback) - checks cache, loads if not present and caches.
+
+### WSDL.*fetch*(url, options, callback) - like load but bypasses cache.
+
+
 
 ## WSSecurity
 
