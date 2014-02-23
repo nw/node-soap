@@ -8,7 +8,8 @@
   "author": "Vinay Pulim <v@pulim.com>",
   "dependencies": {
     "sax": ">=0.6",
-    "request": "git@github.com:mikeal/request.git#master"
+    "request": "git://github.com/mikeal/request.git#master",
+    "extend": "1.2.1"
   },
   "repository": {
     "type": "git",
